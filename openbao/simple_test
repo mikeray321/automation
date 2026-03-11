@@ -2,20 +2,23 @@ This guide provides a complete, end-to-end workflow to set up OpenBao in Docker 
 1. Environment Prerequisites
 Ensure your Ubuntu system has the necessary tools and Python libraries to bridge Ansible and OpenBao.
 
-```Bash
+Bash
+
+
 # Update and install Docker + Python dependencies
 sudo apt update
 sudo apt install docker.io python3-pip python3-hvac -y
-```
+
 # Install the required Ansible collection
-```
 ansible-galaxy collection install community.hashi_vault
-```
+
 
 2. Launch OpenBao (The Server)
 We will run OpenBao in Dev Mode. This automatically unseals the vault and sets up a Key-Value (KV) store at the secret/ path.
 
-```Bash
+Bash
+
+
 # Start the container with a fixed root token for testing
 docker run -d \
   --name openbao-test \
@@ -23,21 +26,19 @@ docker run -d \
   -e "BAO_DEV_ROOT_TOKEN_ID=my-dev-token" \
   -e "BAO_DEV_LISTEN_ADDRESS=0.0.0.0:8200" \
   quay.io/openbao/openbao:latest server -dev
-```
 
 # Seed a test secret into the vault
-```
 curl \
     --header "X-Vault-Token: my-dev-token" \
     --request POST \
     --data '{"data": {"db_password": "super-secret-password-123"}}' \
     http://127.0.0.1:8200/v1/secret/data/myapp/config
-```
+
 
 3. Create the Ansible Playbook
 Create a file named deploy_app.yml. This playbook is designed to be idempotent (only changes the file if the password changes) and includes error handling.
 
-```YAML
+YAML
 
 
 ---
@@ -78,19 +79,21 @@ Create a file named deploy_app.yml. This playbook is designed to be idempotent (
         - name: Failure Handler
           fail:
             msg: "Deployment failed! Verify OpenBao is running and the token is valid."
-```
+
 
 4. Run and Verify
 Execute the playbook by passing the token as an environment variable.
 
-```Bash
+Bash
+
+
 # Run the playbook
 export VAULT_TOKEN="my-dev-token"
 ansible-playbook deploy_app.yml
 
 # Verify the secret was written to the file
 cat /tmp/app_config.txt
-```
+
 
 Summary of Key Points
 Idempotency: The copy module ensures that /tmp/app_config.txt is only touched if the secret in OpenBao actually changes.
